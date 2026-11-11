@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>秋招模拟面试 Agent · 在线版</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#111827; --muted:#6b7280;
+    --line:#e5e7eb; --primary:#2563eb; --primary-weak:#eff4ff;
+    --warn-bg:#fffbeb; --warn-line:#fde68a; --warn-text:#92400e;
+    --radius:14px; --shadow:0 2px 12px rgba(17,24,39,.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:"Microsoft YaHei","微软雅黑","PingFang SC",-apple-system,sans-serif;
+    font-size:15px;line-height:1.65;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:28px 18px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:10px;background:var(--primary);color:#fff;
+        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+  h1{font-size:19px;margin:0;font-weight:700}
+  .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .ver{display:inline-block;font-size:11px;color:#2563eb;background:var(--primary-weak);
+       border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:middle}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 12px}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+  input,select,textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:14px;color:var(--text);background:#fff;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-weak)}
+  textarea{resize:vertical;min-height:120px;line-height:1.6}
+  .row{display:flex;gap:12px}
+  .row>div{flex:1}
+  button{
+    font-family:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--text);
+    padding:10px 16px;border-radius:10px;cursor:pointer;transition:.15s;
+  }
+  button:hover{border-color:#cbd5e1}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+  button.primary:hover{filter:brightness(.95)}
+  button.ghost{border:none;background:transparent;color:var(--muted);padding:8px 10px}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .btn-stop{padding:7px 14px;font-size:13px;border-color:#fecaca;background:#fef2f2;color:#b91c1c;font-weight:600}
+  .actions{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .hint{font-size:12.5px;color:var(--muted)}
+  .banner{background:var(--primary-weak);border:1px solid #d8e3ff;color:#1e40af;
+          padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:14px}
+  .banner.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn-text)}
+  /* chat */
+  #chatView{display:none}
+  .chat-box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+            box-shadow:var(--shadow);overflow:hidden}
+  .chat-head{display:flex;justify-content:space-between;align-items:center;gap:10px;
+             padding:12px 16px;border-bottom:1px solid var(--line);background:#fbfcfd}
+  .chat-head .title{font-size:14px;font-weight:600}
+  .chat-head .meta{font-size:12px;color:var(--muted)}
+  #messages{height:min(62vh,560px);overflow-y:auto;padding:18px 16px;background:#fcfcfd}
+  .msg{display:flex;gap:10px;margin-bottom:16px}
+  .avatar{width:30px;height:30px;border-radius:9px;flex:0 0 30px;display:flex;
+          align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .msg.user .avatar{background:#0f172a}
+  .msg.agent .avatar{background:var(--primary)}
+  .bubble{max-width:calc(100% - 48px);padding:11px 14px;border-radius:12px;font-size:14.5px;
+          white-space:pre-wrap;word-break:break-word}
+  .msg.user .bubble{background:var(--primary);color:#fff;border-top-right-radius:4px}
+  .msg.agent .bubble{background:#fff;border:1px solid var(--line);border-top-left-radius:4px}
+  .msg.agent .bubble strong{color:#1e40af}
+  .msg.agent .bubble.err{border-color:#fecaca;background:#fef7f7}
+  .retryBtn{margin-top:10px;padding:6px 12px;font-size:13px;border:1px solid var(--primary);
+            color:var(--primary);background:#fff;border-radius:8px;cursor:pointer}
+  .composer{border-top:1px solid var(--line);padding:12px;background:#fff}
+  .composer textarea{min-height:76px;border-radius:10px}
+  .composer .bar{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap}
+  .typing{display:inline-flex;gap:4px;align-items:center;color:var(--muted);font-size:13px}
+  .dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:b 1.2s infinite}
+  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+  @keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+  dialog{border:none;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);
+         box-shadow:0 20px 60px rgba(17,24,39,.2)}
+  dialog::backdrop{background:rgba(15,23,42,.45)}
+  .dlg-body{padding:20px}
+  .dlg-head{display:flex;justify-content:space-between;align-items:center}
+  .dlg-head h3{margin:0;font-size:16px}
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .presets button{padding:7px 12px;font-size:13px;border-radius:999px}
+  #testResult{font-size:12.5px;margin-top:10px;line-height:1.6;word-break:break-all}
+  @media (max-width:640px){ .row{flex-direction:column} .wrap{padding:18px 12px 48px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">面</div>
+      <div>
+        <h1>秋招模拟面试 Agent<span class="ver">v2</span></h1>
+        <div class="sub">简历 + JD → 多面试官模拟面试 → 复盘报告</div>
+      </div>
+    </div>
+    <button id="btnCfg" class="ghost">⚙ 模型设置</button>
+  </header>
+
+  <!-- 设置区 -->
+  <section id="setupView">
+    <div id="keyBanner" class="banner" style="display:none">
+      还没有配置模型 API，请先点右上角「⚙ 模型设置」填入 Key（仅保存在你本机浏览器）。
+    </div>
+    <div class="card">
+      <h2>1. 输入材料</h2>
+      <label>简历（粘贴文本，含教育背景、实习/项目经历、技能）</label>
+      <textarea id="resume" placeholder="例：2023.09-2027.06 某大学 计算机科学与技术 本科…&#10;2026.03-2026.08 某公司 数据分析实习：负责…"></textarea>
+      <label>目标岗位 JD（招聘界面全文；没有可只写岗位名称与主要职责）</label>
+      <textarea id="jd" placeholder="例：数据分析师（校招）…岗位职责…任职要求…"></textarea>
+      <div class="row">
+        <div>
+          <label>面试类型</label>
+          <select id="type">
+            <option>业务面（直属上级）</option>
+            <option>专业面（平级资深/小组长）</option>
+            <option>交叉面（相关部门负责人）</option>
+            <option>HR 面</option>
+          </select>
+        </div>
+        <div>
+          <label>时长偏好</label>
+          <select id="duration">
+            <option>30 分钟</option>
+            <option selected>40 分钟</option>
+            <option>50 分钟</option>
+            <option>60 分钟</option>
+          </select>
+        </div>
+      </div>
+      <label>特定训练诉求（可选）</label>
+      <input id="focus" placeholder="例：重点练项目深挖 / 想克服紧张 / 练岗位匹配表达">
+      <div class="actions">
+        <button id="btnStart" class="primary">开始模拟面试</button>
+        <span class="hint">信息可以先随便填，面试官会先给出「准备摘要」再开始提问</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>2. 使用说明</h2>
+      <p class="hint" style="line-height:1.8">
+        · 本页面只是一个前端界面，模型调用由你自己的 API Key 发起，聊天记录不上传任何服务器；<br>
+        · 支持任意 <strong>OpenAI 兼容</strong> 接口，<strong>该接口必须允许浏览器跨域调用（CORS）</strong>；<br>
+        · 已实测可直连：DeepSeek、通义千问（兼容模式）、Kimi；<strong>OpenAI 官方地址在境内通常不可达</strong>，会一直卡在「思考中」；<br>
+        · 面试结束后可点「导出复盘」把整场记录下载为 Markdown。
+      </p>
+    </div>
+  </section>
+
+  <!-- 对话区 -->
+  <section id="chatView">
+    <div class="chat-box">
+      <div class="chat-head">
+        <div>
+          <div class="title">模拟面试进行中</div>
+          <div class="meta" id="chatMeta">—</div>
+        </div>
+        <div>
+          <button id="btnExport" class="ghost">导出复盘</button>
+          <button id="btnReset" class="ghost">重新开始</button>
+        </div>
+      </div>
+      <div id="messages"></div>
+      <div class="composer">
+        <textarea id="input" placeholder="输入你的回答…（Ctrl/⌘ + Enter 发送）"></textarea>
+        <div class="bar">
+          <span class="hint">想跳过说「跳过」，想结束说「结束面试」</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="typing" class="typing" style="display:none"><span class="dot"></span><span class="dot"></span><span class="dot"></span> <span id="typingText">面试官思考中</span></span>
+            <button id="btnStop" class="btn-stop" style="display:none">停止等待</button>
+            <button id="btnSend" class="primary">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<dialog id="cfgDlg">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <h3>模型设置</h3>
+      <button id="btnCfgClose" class="ghost">关闭</button>
+    </div>
+    <label>快捷填入（只填地址和模型名，Key 仍需你自己填）</label>
+    <div class="presets" id="presets"></div>
+    <label>接口地址（Base URL，OpenAI 兼容）</label>
+    <input id="cfgBase" placeholder="https://api.deepseek.com/v1">
+    <label>模型名</label>
+    <input id="cfgModel" placeholder="deepseek-chat / qwen-plus / moonshot-v1-8k">
+    <label>API Key</label>
+    <input id="cfgKey" type="password" placeholder="sk-...">
+    <p class="hint" style="margin-top:12px">
+      Key 只写入本机 localStorage，不经任何中转服务器。公共电脑用完请清空。
+    </p>
+    <div class="actions">
+      <button id="btnCfgSave" class="primary">保存</button>
+      <button id="btnTest">测试连接</button>
+      <button id="btnCfgClear" class="ghost">清空 Key</button>
+    </div>
+    <div id="testResult"></div>
+  </div>
+</dialog>
+
+<script>
+/* ============ 系统提示词（精简版，全文见 prompts/system_prompt.md） ============ */
+const SYSTEM_PROMPT = [
+"你是「秋招模拟面试 Agent」，服务对象是 2027 届秋招求职者本人。你模拟真实企业面试全过程，帮助用户练手感、练表达、理解岗位 JD。只做模拟面试：不代答、不提示答案、不评判真实公司、不编造真实企业内幕。全程简体中文。",
+"",
+"【流程】1 收集输入（简历、岗位 JD、面试类型必填；时长与训练诉求可选）→ 2 分析并输出一次「面试准备摘要」→ 3 逐题面试（可追问）→ 4 面试结束输出「模拟面试复盘报告」。",
+"",
+"【分析】① 拆简历：每段经历的角色、动作、量化结果、可追问细节，标出风险点（空窗/模糊/夸大嫌疑/与JD差距）；② 建岗位画像：日常工作、团队目标、职能工具、突发情况、需协调部门，JD 不足处做假设性推断并标注；③ 人岗匹配出题：把经历与能力映射到岗位要求，按面试类型建题目库；④ 造情境题：每题含人物、地点、时间三要素。完成后输出【面试准备摘要】：简历要点与风险 / 岗位画像（标推断）/ 面试团构成 / 重点考察方向。",
+"",
+"【面试团】按面试类型随机选 3-4 位不同风格面试官，命名面试官1、面试官2…，开场介绍各自风格；每题前必须标注提问者，格式：【面试官2（犀利型）】。九种风格：审判型（居高临下、追问细节、压测抗压）、引导型（重视团队文化、专业训练）、专业型（聚焦业务细节与专业技能）、随缘型（发散但有深意）、犀利型（挖简历漏洞、压力面）、刁钻型（跳脱、发现盲点）、亲切和蔼型（亲和、靠做事考察能力）、笑面虎型（表面温和、招招致命、爱打低分）、喜欢奉承型（年长、爱听候选人肯定公司价值）。人设需稳定，不得串风格。",
+"",
+"【命题】每题必须源于公司背景/职位背景/简历/岗位需求至少一项，综合多依据者优先；禁止闲聊、常识题与泄题。",
+"",
+"【推进】用户每次回答后二选一：追问（严格基于该题回答，同一问题链追问≤4轮）或出新题。内部维护：当前面试官、当前链轮次、已考维度、待考维度、回答亮点与疑点、剩余时间；避免重复考察同一要点。",
+"",
+"【时间】全程 30-60 分钟（默认 40）。时间过半收紧节奏、优先待考高优先项；临近上限收尾：面试官致谢→询问用户是否有问题要问（反问环节）→告知复盘报告中出具。",
+"",
+"【纪律】面试中不代答、不提示答案、不点评对错；用户喊停或明确求指导才退出角色；收到「跳过」「下一题」「结束面试」立即响应。",
+"",
+"【复盘】每场结束必须输出：① 打分（内容质量30%、结构表达25%、深度真实感25%、应变心态20%）与一句总评；② 分维度评分表，每条依据引用用户原话；③ 逐题回顾：用户回答摘要→面试官视角点评→改进建议；④ 短板分析：表述问题/知识漏洞/心态问题；⑤ 下次训练重点；⑥ 档案编号。",
+"",
+"【模板】单题：第一行【面试官N（风格）】，第二行问题正文。摘要以【面试准备摘要】开头。复盘以【模拟面试复盘报告】开头，分六个部分。"
+].join("\n");
+
+/* ============ 服务商预设 ============ */
+const PRESETS = [
+  { name:'DeepSeek', base:'https://api.deepseek.com/v1', model:'deepseek-chat' },
+  { name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1', model:'qwen-plus' },
+  { name:'Kimi', base:'https://api.moonshot.cn/v1', model:'moonshot-v1-8k' },
+  { name:'OpenAI（需境外网络）', base:'https://api.openai.com/v1', model:'gpt-4o-mini' }
+];
+const DEFAULT_CFG = { base:'https://api.deepseek.com/v1', model:'deepseek-chat' };
+
+/* ============ 状态 ============ */
+const $ = id => document.getElementById(id);
+const store = {
+  get cfg(){ try{return JSON.parse(localStorage.getItem('mia_cfg')||'{}')}catch(e){return {}} },
+  set cfg(v){ localStorage.setItem('mia_cfg', JSON.stringify(v)) },
+  get setup(){ try{return JSON.parse(localStorage.getItem('mia_setup')||'{}')}catch(e){return {}} },
+  set setup(v){ localStorage.setItem('mia_setup', JSON.stringify(v)) }
+};
+let messages = [];
+let busy = false;
+let sessionInfo = { type:'', duration:'', started:'' };
+let currentAbort = null;
+let abortReason = '';
+let clockTimer = null;
+
+/* ============ 初始化 ============ */
+(function init(){
+  const cfg = store.cfg, saved = store.setup;
+  $('cfgBase').value = cfg.base || DEFAULT_CFG.base;
+  $('cfgModel').value = cfg.model || DEFAULT_CFG.model;
+  if(cfg.key) $('cfgKey').value = cfg.key;
+  if(saved.resume) $('resume').value = saved.resume;
+  if(saved.jd) $('jd').value = saved.jd;
+  if(saved.focus) $('focus').value = saved.focus;
+  if(saved.type) $('type').value = saved.type;
+  if(saved.duration) $('duration').value = saved.duration;
+
+  // 快捷按钮
+  PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.textContent = p.name;
+    b.onclick = () => { $('cfgBase').value = p.base; $('cfgModel').value = p.model; };
+    $('presets').appendChild(b);
+  });
+
+  refreshBanner();
+})();
+
+function refreshBanner(){
+  const cfg = store.cfg;
+  const ban = $('keyBanner');
+  if(!cfg.key || !cfg.base || !cfg.model){
+    ban.className = 'banner';
+    ban.style.display = 'block';
+    ban.textContent = '还没有配置模型 API，请先点右上角「⚙ 模型设置」填入 Key（仅保存在你本机浏览器）。';
+    return;
+  }
+  if(/api\.openai\.com/.test(cfg.base)){
+    ban.className = 'banner warn';
+    ban.style.display = 'block';
+    ban.innerHTML = '当前接口地址是 <strong>OpenAI 官方地址</strong>。境内网络通常无法直连，' +
+                    '请求会长时间卡在「思考中」。请到「⚙ 模型设置」换成 DeepSeek / 通义 / Kimi。';
+    return;
+  }
+  ban.style.display = 'none';
+}
+
+/* ============ 设置弹窗 ============ */
+$('btnCfg').onclick = () => { $('testResult').textContent = ''; $('cfgDlg').showModal(); };
+$('btnCfgClose').onclick = () => $('cfgDlg').close();
+$('btnCfgSave').onclick = () => {
+  const base = $('cfgBase').value.trim().replace(/\/+$/,'');
+  const model = $('cfgModel').value.trim();
+  const key = $('cfgKey').value.trim();
+  if(!base || !model){ alert('接口地址和模型名不能为空'); return; }
+  store.cfg = { base, model, key };
+  refreshBanner();
+  $('cfgDlg').close();
+};
+$('btnCfgClear').onclick = () => { store.cfg = {}; $('cfgKey').value = ''; refreshBanner(); };
+
+/* 测试连接：15 秒超时，返回可读诊断 */
+$('btnTest').onclick = async () => {
+  const base = $('cfgBase').value.trim().replace(/\/+$/,'');
+  const model = $('cfgModel').value.trim();
+  const key = $('cfgKey').value.trim();
+  const out = $('testResult');
+  if(!base || !model){ out.textContent = '✗ 请先填写接口地址和模型名'; return; }
+  out.style.color = '#6b7280';
+  out.textContent = '测试中，最多等 15 秒…';
+
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 15000);
+  const t0 = Date.now();
+  try{
+    const r = await fetch(base + '/chat/completions', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
+      body: JSON.stringify({ model, messages:[{role:'user', content:'ping'}], max_tokens: 8, stream:false }),
+      signal: ctl.signal
+    });
+    clearTimeout(timer);
+    const ms = Date.now() - t0;
+    const txt = await r.text();
+    if(r.ok){
+      out.style.color = '#047857';
+      out.textContent = '✓ 连接成功（' + ms + 'ms）。模型已正常返回，可以开始面试。';
+    }else if(r.status === 401 || r.status === 403){
+      out.style.color = '#b91c1c';
+      out.textContent = '✗ HTTP ' + r.status + '：API Key 无效或无权限。请重新复制 Key（注意首尾空格）。';
+    }else if(r.status === 404){
+      out.style.color = '#b91c1c';
+      out.textContent = '✗ HTTP 404：接口路径不对。Base URL 一般要以 /v1 结尾，例如 https://api.deepseek.com/v1';
+    }else if(r.status === 400){
+      out.style.color = '#b91c1c';
+      out.textContent = '✗ HTTP 400：多为模型名写错。返回：' + txt.slice(0, 200);
+    }else if(r.status === 429){
+      out.style.color = '#b91c1c';
+      out.textContent = '✗ HTTP 429：请求太频繁或余额不足。';
+    }else{
+      out.style.color = '#b91c1c';
+      out.textContent = '✗ HTTP ' + r.status + '：' + txt.slice(0, 200);
+    }
+  }catch(err){
+    clearTimeout(timer);
+    const ms = Date.now() - t0;
+    out.style.color = '#b91c1c';
+    if(err.name === 'AbortError'){
+      out.textContent = '✗ 15 秒内无任何响应。这个地址在当前网络下不可达，换一个接口地址（推荐 DeepSeek / 通义 / Kimi）。';
+    }else{
+      out.textContent = '✗ 网络请求失败（' + ms + 'ms）：' + err.message +
+        '。常见原因：地址打不开，或该接口不允许浏览器跨域调用（CORS）。';
+    }
+  }
+};
+
+/* ============ 等待计时器 ============ */
+function startClock(label){
+  const t0 = Date.now();
+  $('typingText').textContent = label;
+  $('typing').style.display = 'inline-flex';
+  $('btnStop').style.display = 'inline-block';
+  clearInterval(clockTimer);
+  clockTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - t0) / 1000);
+    $('typingText').textContent = label + ' · ' + s + 's' + (s >= 20 ? '（偏慢，可点右侧停止）' : '');
+  }, 1000);
+}
+function stopClock(){
+  clearInterval(clockTimer); clockTimer = null;
+  $('typing').style.display = 'none';
+  $('btnStop').style.display = 'none';
+}
+$('btnStop').onclick = () => {
+  if(currentAbort){ abortReason = '你手动停止了等待'; currentAbort.abort(); }
+};
+
+/* ============ 启动面试 ============ */
+$('btnStart').onclick = () => {
+  const cfg = store.cfg;
+  if(!cfg.key || !cfg.base){ $('cfgDlg').showModal(); return; }
+  const resume = $('resume').value.trim();
+  const jd = $('jd').value.trim();
+  if(resume.length < 30){ alert('简历内容太短，请至少粘贴教育背景与一段经历'); return; }
+  if(jd.length < 10){ alert('请粘贴岗位 JD，或至少写上岗位名称与主要职责'); return; }
+
+  store.setup = {
+    resume, jd,
+    focus: $('focus').value.trim(),
+    type: $('type').value,
+    duration: $('duration').value
+  };
+
+  const brief = [
+    '【本次面试输入】',
+    '简历：\n' + resume,
+    '目标岗位 JD：\n' + jd,
+    '面试类型：' + $('type').value,
+    '时长偏好：' + $('duration').value,
+    '特定训练诉求：' + ($('focus').value.trim() || '无'),
+    '',
+    '请先做信息校验：如缺关键信息请一次性指出并等待补充；信息齐全则直接输出【面试准备摘要】，然后由第一位面试官提出第一个问题。'
+  ].join('\n');
+
+  sessionInfo = { type: $('type').value, duration: $('duration').value,
+                  started: new Date().toLocaleString('zh-CN') };
+  messages = [{ role:'system', content: SYSTEM_PROMPT }, { role:'user', content: brief }];
+
+  $('setupView').style.display = 'none';
+  $('chatView').style.display = 'block';
+  $('chatMeta').textContent = sessionInfo.type + ' · ' + sessionInfo.duration + ' · ' + sessionInfo.started;
+  $('messages').innerHTML = '';
+  const ph = addMsg('agent', '正在读取简历与 JD，生成面试准备摘要…');
+  callModel(ph);
+};
+
+/* ============ 消息渲染 ============ */
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt(s){
+  return esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.*)$/gm, '<strong>$1</strong>')
+    .replace(/^## (.*)$/gm, '<strong>$1</strong>')
+    .replace(/^# (.*)$/gm, '<strong>$1</strong>');
+}
+function addMsg(role, text){
+  const box = document.createElement('div');
+  box.className = 'msg ' + role;
+  box.innerHTML = '<div class="avatar">' + (role === 'user' ? '我' : '面') + '</div>' +
+                  '<div class="bubble">' + fmt(text) + '</div>';
+  $('messages').appendChild(box);
+  $('messages').scrollTop = $('messages').scrollHeight;
+  return box.querySelector('.bubble');
+}
+function removeBubble(b){ if(b && b.parentNode) b.parentNode.remove(); }
+
+/* 错误气泡：带可读诊断 + 重试 */
+function showError(bubble, text, retry){
+  const b = bubble || addMsg('agent', '');
+  b.classList.add('err');
+  b.innerHTML = fmt(text);
+  if(retry){
+    const btn = document.createElement('button');
+    btn.className = 'retryBtn';
+    btn.textContent = '重试';
+    btn.onclick = () => { removeBubble(b); callModel(null); };
+    b.appendChild(btn);
+  }
+  $('messages').scrollTop = $('messages').scrollHeight;
+}
+
+/* ============ 调用模型 ============ */
+async function callModel(placeholder){
+  const cfg = store.cfg;
+  if(!cfg.key){ $('cfgDlg').showModal(); return; }
+  if(busy) return;
+
+  busy = true;
+  $('btnSend').disabled = true;
+  abortReason = '';
+  currentAbort = new AbortController();
+  const signal = currentAbort.signal;
+
+  startClock('正在连接 ' + cfg.model);
+
+  let acc = '';
+  let bubble = null;
+  let firstTimer = null;
+  let idleTimer = null;
+
+  try{
+    // 首字节超时：45 秒内没有任何响应就放弃，避免无限卡住
+    firstTimer = setTimeout(() => {
+      abortReason = '接口 45 秒内没有任何响应';
+      currentAbort.abort();
+    }, 45000);
+
+    const resp = await fetch(cfg.base + '/chat/completions', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + cfg.key },
+      body: JSON.stringify({ model: cfg.model, messages, stream: true, temperature: 0.8 }),
+      signal,
+      cache: 'no-store'
+    });
+
+    clearTimeout(firstTimer);
+    firstTimer = null;
+
+    if(!resp.ok){
+      const txt = await resp.text();
+      let tip = '';
+      if(resp.status === 401 || resp.status === 403) tip = '\n\nAPI Key 无效或无权限，请重新复制 Key。';
+      else if(resp.status === 404) tip = '\n\n接口路径不对，Base URL 一般需要以 /v1 结尾。';
+      else if(resp.status === 400) tip = '\n\n多为模型名写错，可点「⚙ 模型设置 → 测试连接」确认。';
+      else if(resp.status === 429) tip = '\n\n请求过于频繁或余额不足。';
+      showError(placeholder, '接口返回 HTTP ' + resp.status + '：' + txt.slice(0, 200) + tip, true);
+      return;
+    }
+
+    startClock('面试官思考中');
+
+    // 非流式降级：老版本 Safari 无 response.body.getReader
+    if(!resp.body || typeof resp.body.getReader !== 'function'){
+      const j = await resp.json();
+      acc = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+      removeBubble(placeholder);
+      if(acc){ bubble = addMsg('agent', acc); }
+      else { showError(placeholder, '模型返回了空内容，请检查模型名是否正确。', true); return; }
+      messages.push({ role:'assistant', content: acc });
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder('utf-8');
+    let buf = '';
+
+    while(true){
+      // 数据流中断保护：90 秒没有新数据就放弃
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        abortReason = '数据流中断（90 秒没有新内容）';
+        currentAbort.abort();
+      }, 90000);
+
+      const { done, value } = await reader.read();
+      if(done) break;
+
+      buf += dec.decode(value, { stream:true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for(const line of lines){
+        const s = line.trim();
+        if(!s.startsWith('data:')) continue;
+        const data = s.slice(5).trim();
+        if(data === '[DONE]') continue;
+        let j = null;
+        try{ j = JSON.parse(data); }catch(e){ continue; }
+        const delta = j.choices && j.choices[0] && j.choices[0].delta;
+        const piece = (delta && (delta.content || '')) || '';
+        if(piece){
+          if(!acc){ removeBubble(placeholder); bubble = addMsg('agent', ''); }
+          acc += piece;
+          bubble.innerHTML = fmt(acc);
+          $('messages').scrollTop = $('messages').scrollHeight;
+        }
+      }
+    }
+
+    if(!acc){
+      showError(placeholder, '模型没有返回任何内容。可能是模型名不对，或该模型不支持流式输出，' +
+                '请点「⚙ 模型设置 → 测试连接」排查。', true);
+      return;
+    }
+    messages.push({ role:'assistant', content: acc });
+
+  }catch(err){
+    const isAbort = err && err.name === 'AbortError';
+    let msg;
+    if(isAbort){
+      msg = '已中止：' + (abortReason || '请求被取消') + '。\n\n' +
+            '排查顺序：① 点右上角「⚙ 模型设置 → 测试连接」看接口是否通；' +
+            '② 若用的是 OpenAI 官方地址，请换成 DeepSeek / 通义 / Kimi；' +
+            '③ 确认 Base URL 以 /v1 结尾。';
+    }else if(err instanceof TypeError){
+      msg = '网络请求失败：' + err.message + '\n\n' +
+            '常见原因：接口地址打不开、该接口不允许浏览器跨域调用（CORS）、或网络被拦截。\n' +
+            '建议先在「⚙ 模型设置」里点「测试连接」定位。';
+    }else{
+      msg = '调用失败：' + (err && err.message ? err.message : String(err));
+    }
+    showError(placeholder, msg, true);
+  }finally{
+    clearTimeout(firstTimer);
+    clearTimeout(idleTimer);
+    stopClock();
+    busy = false;
+    $('btnSend').disabled = false;
+    currentAbort = null;
+  }
+}
+
+/* ============ 发送 ============ */
+function send(){
+  if(busy) return;
+  const text = $('input').value.trim();
+  if(!text) return;
+  addMsg('user', text);
+  messages.push({ role:'user', content: text });
+  $('input').value = '';
+  callModel(null);
+}
+$('btnSend').onclick = send;
+$('input').addEventListener('keydown', e => {
+  if((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); send(); }
+});
+
+/* ============ 导出 / 重置 ============ */
+$('btnExport').onclick = () => {
+  if(!messages.length) return;
+  const lines = [
+    '# 模拟面试记录', '',
+    '- 面试类型：' + (sessionInfo.type || ''),
+    '- 时长偏好：' + (sessionInfo.duration || ''),
+    '- 开始时间：' + (sessionInfo.started || ''),
+    '', '---', ''
+  ];
+  messages.forEach(m => {
+    if(m.role === 'system') return;
+    lines.push('### ' + (m.role === 'user' ? '我' : '面试官'));
+    lines.push('');
+    lines.push(m.content);
+    lines.push('');
+  });
+  const blob = new Blob([lines.join('\n')], { type:'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '模拟面试复盘_' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$('btnReset').onclick = () => {
+  if(busy && currentAbort) currentAbort.abort();
+  if(!confirm('结束本场面试并返回输入页？（对话记录可用「导出复盘」先保存）')) return;
+  messages = [];
+  $('chatView').style.display = 'none';
+  $('setupView').style.display = 'block';
+};
+</script>
+</body>
+</html>
